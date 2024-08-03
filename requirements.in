@@ -2,7 +2,7 @@ fastapi[all]
 tortoise-orm
 aiocache
 cryptography
-jose
+python-jose
 passlib
 aerich
 asyncpg
