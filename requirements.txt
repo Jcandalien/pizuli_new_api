@@ -4,7 +4,11 @@
 #
 #    pip-compile
 #
+aerich==0.7.2
+    # via -r requirements.in
 aiocache==0.12.2
+    # via -r requirements.in
+aioredis==1.3.1
     # via -r requirements.in
 aiosqlite==0.17.0
     # via tortoise-orm
@@ -15,20 +19,41 @@ anyio==4.4.0
     #   httpx
     #   starlette
     #   watchfiles
+argon2-cffi==23.1.0
+    # via passlib
+argon2-cffi-bindings==21.2.0
+    # via argon2-cffi
+async-timeout==4.0.3
+    # via
+    #   aioredis
+    #   asyncpg
+asyncpg==0.29.0
+    # via -r requirements.in
 certifi==2024.7.4
     # via
     #   httpcore
     #   httpx
+cffi==1.16.0
+    # via
+    #   argon2-cffi-bindings
+    #   cryptography
 click==8.1.7
     # via
+    #   aerich
     #   typer
     #   uvicorn
 colorama==0.4.6
     # via
     #   click
     #   uvicorn
+cryptography==43.0.0
+    # via -r requirements.in
+dictdiffer==0.9.0
+    # via aerich
 dnspython==2.6.1
     # via email-validator
+ecdsa==0.19.0
+    # via python-jose
 email-validator==2.2.0
     # via fastapi
 fastapi[all]==0.111.1
@@ -39,6 +64,8 @@ h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
+hiredis==3.0.0
+    # via aioredis
 httpcore==1.0.5
     # via httpx
 httptools==0.6.1
@@ -64,8 +91,17 @@ mdurl==0.1.2
     # via markdown-it-py
 orjson==3.10.6
     # via fastapi
+passlib[argon2]==1.7.4
+    # via -r requirements.in
+pyasn1==0.6.0
+    # via
+    #   python-jose
+    #   rsa
+pycparser==2.22
+    # via cffi
 pydantic==2.8.2
     # via
+    #   aerich
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
@@ -84,6 +120,8 @@ python-dotenv==1.0.1
     # via
     #   pydantic-settings
     #   uvicorn
+python-jose==3.3.0
+    # via -r requirements.in
 python-multipart==0.0.9
     # via fastapi
 pytz==2024.1
@@ -94,16 +132,24 @@ pyyaml==6.0.1
     #   uvicorn
 rich==13.7.1
     # via typer
+rsa==4.9
+    # via python-jose
 shellingham==1.5.4
     # via typer
+six==1.16.0
+    # via ecdsa
 sniffio==1.3.1
     # via
     #   anyio
     #   httpx
 starlette==0.37.2
     # via fastapi
+tomlkit==0.13.0
+    # via aerich
 tortoise-orm==0.21.5
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   aerich
 typer==0.12.3
     # via fastapi-cli
 typing-extensions==4.12.2
