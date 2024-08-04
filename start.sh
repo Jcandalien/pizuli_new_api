@@ -22,7 +22,7 @@ su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE pizuli TO jc;\""
 
 # Grant necessary permissions to jc user
 su - postgres -c "psql -d pizuli -c \"GRANT ALL ON SCHEMA public TO jc;\""
-su - postgres -c "psql -d pizuli -c \"DATABASE piaxe OWNER TO jc;\""
+su - postgres -c "psql -d pizuli -c \"ALTER DATABASE piaxe OWNER TO jc;\""
 su - postgres -c "psql -d pizuli -c \"GRANT ALL ON ALL TABLES IN SCHEMA public TO jc;\""
 su - postgres -c "psql -d pizuli -c \"GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO jc;\""
 su - postgres -c "psql -d pizuli -c \"GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO jc;\""
