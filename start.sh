@@ -20,6 +20,12 @@ su - postgres -c "psql -c \"ALTER ROLE jc SET default_transaction_isolation TO '
 su - postgres -c "psql -c \"ALTER ROLE jc SET timezone TO 'UTC';\""
 su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE pizuli TO jc;\""
 
+# Grant necessary permissions to jc user
+su - postgres -c "psql -d pizuli -c \"GRANT ALL ON SCHEMA public TO jc;\""
+su - postgres -c "psql -d pizuli -c \"GRANT ALL ON ALL TABLES IN SCHEMA public TO jc;\""
+su - postgres -c "psql -d pizuli -c \"GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO jc;\""
+su - postgres -c "psql -d pizuli -c \"GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO jc;\""
+
 # Update the pg_hba.conf file to use md5 authentication for all local connections
 sed -i 's/peer/md5/g' /etc/postgresql/*/main/pg_hba.conf
 sed -i 's/ident/md5/g' /etc/postgresql/*/main/pg_hba.conf
@@ -34,4 +40,4 @@ until pg_isready; do
 done
 
 # Run the FastAPI application
-uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn pizuli.main:app --host 0.0.0.0 --port 8000
