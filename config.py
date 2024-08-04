@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/pizuli")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgres://jc:76765767@localhost:5432/pizuli")
 
 TORTOISE_ORM = {
     "connections": {"default": DATABASE_URL},
