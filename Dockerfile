@@ -9,8 +9,7 @@ ENV DATABASE_URL=postgres://postgres:postgres@localhost:5432/pizuli
 WORKDIR /app
 
 # Install system dependencies
-# RUN apt-get update && apt-get install -y postgresql postgresql-contrib
-RUN apt-get update && apt-get install -y postgresql-client
+RUN apt-get update && apt-get install -y postgresql postgresql-contrib postgresql-client
 
 # Copy project files
 COPY . /app/
