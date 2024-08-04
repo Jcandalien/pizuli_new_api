@@ -1,10 +1,16 @@
 #!/bin/bash
 
-# Extract database connection details from DATABASE_URL
+# Print all environment variables
+echo "All environment variables:"
+env
+
+# Check for DATABASE_URL
 if [ -z "$DATABASE_URL" ]; then
     echo "DATABASE_URL is not set. Exiting."
     exit 1
 fi
+
+echo "DATABASE_URL is set. Value: $DATABASE_URL"
 
 # Parse the DATABASE_URL
 USER=$(echo $DATABASE_URL | awk -F[:@] '{print $2}')

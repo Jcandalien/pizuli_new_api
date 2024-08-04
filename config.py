@@ -1,14 +1,10 @@
 import os
 from dotenv import load_dotenv
-from urllib.parse import urlparse
 
 load_dotenv()
 
-# Parse the DATABASE_URL
-db_url = urlparse(os.getenv("DATABASE_URL", "postgres://jc:76765767@localhost:5432/pizuli"))
-
-# Construct the Tortoise ORM compatible database URL
-DATABASE_URL = f"postgres://{db_url.username}:{db_url.password}@{db_url.hostname}:{db_url.port}/{db_url.path[1:]}"
+# Hardcoded database URL (temporary for debugging)
+DATABASE_URL = "postgres://jc:76765767@localhost:5432/pizuli"
 
 TORTOISE_ORM = {
     "connections": {"default": DATABASE_URL},
