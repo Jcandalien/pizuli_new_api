@@ -3,8 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Hardcoded database URL (temporary for debugging)
-DATABASE_URL = "postgres://jc:76765767@localhost:5432/pizuli"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/pizuli")
 
 TORTOISE_ORM = {
     "connections": {"default": DATABASE_URL},

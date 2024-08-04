@@ -6,8 +6,10 @@ env
 
 # Check for DATABASE_URL
 if [ -z "$DATABASE_URL" ]; then
-    echo "DATABASE_URL is not set. Exiting."
-    exit 1
+    echo "DATABASE_URL is not set. Using default."
+    export DATABASE_URL="postgres://postgres:postgres@localhost:5432/pizuli"
+else
+    echo "DATABASE_URL is set. Value: $DATABASE_URL"
 fi
 
 echo "DATABASE_URL is set. Value: $DATABASE_URL"
