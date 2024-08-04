@@ -1,35 +1,45 @@
 #!/bin/bash
 
-# Print all environment variables
-echo "All environment variables:"
-env
+# Start PostgreSQL service
+service postgresql start
 
-# Check for DATABASE_URL
-if [ -z "$DATABASE_URL" ]; then
-    echo "DATABASE_URL is not set. Using default."
-    export DATABASE_URL="postgres://postgres:postgres@localhost:5432/pizuli"
-else
-    echo "DATABASE_URL is set. Value: $DATABASE_URL"
-fi
-
-echo "DATABASE_URL is set. Value: $DATABASE_URL"
-
-# Parse the DATABASE_URL
-USER=$(echo $DATABASE_URL | awk -F[:@] '{print $2}')
-PASS=$(echo $DATABASE_URL | awk -F[:@] '{print $3}')
-HOST=$(echo $DATABASE_URL | awk -F[@:/] '{print $4}')
-PORT=$(echo $DATABASE_URL | awk -F[@:/] '{print $5}')
-DB=$(echo $DATABASE_URL | awk -F[@:/] '{print $6}')
-
-echo "Connecting to database..."
-
-# Wait for the database to be ready
-until PGPASSWORD=$PASS psql -h $HOST -U $USER -d $DB -c '\q'; do
-  echo "Waiting for database to be ready..."
+# Wait for PostgreSQL to start
+until pg_isready; do
+  echo "Waiting for PostgreSQL to start..."
   sleep 2
 done
 
-echo "Database is ready."
+# Set a password for the postgres user
+su - postgres -c "psql -c \"ALTER USER postgres WITH PASSWORD 'postgres';\""
+
+# Create database and user
+su - postgres -c "psql -c \"CREATE DATABASE pizuli;\""
+su - postgres -c "psql -c \"CREATE USER jc WITH PASSWORD '76765767';\""
+su - postgres -c "psql -c \"ALTER ROLE jc SET client_encoding TO 'utf8';\""
+su - postgres -c "psql -c \"ALTER ROLE jc SET default_transaction_isolation TO 'read committed';\""
+su - postgres -c "psql -c \"ALTER ROLE jc SET timezone TO 'UTC';\""
+su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE pizuli TO jc;\""
+
+# Grant necessary permissions to jc user
+su - postgres -c "psql -d pizuli -c \"GRANT ALL ON SCHEMA public TO jc;\""
+su - postgres -c "psql -d pizuli -c \"DATABASE piaxe OWNER TO jc;\""
+su - postgres -c "psql -d pizuli -c \"GRANT ALL ON ALL TABLES IN SCHEMA public TO jc;\""
+su - postgres -c "psql -d pizuli -c \"GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO jc;\""
+su - postgres -c "psql -d pizuli -c \"GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO jc;\""
+
+
+# Update the pg_hba.conf file to use md5 authentication for all local connections
+sed -i 's/peer/md5/g' /etc/postgresql/*/main/pg_hba.conf
+sed -i 's/ident/md5/g' /etc/postgresql/*/main/pg_hba.conf
+
+# Restart PostgreSQL to apply changes
+service postgresql restart
+
+# Wait for PostgreSQL to restart
+until pg_isready; do
+  echo "Waiting for PostgreSQL to restart..."
+  sleep 2
+done
 
 # Run the FastAPI application
-uvicorn pizuli.main:app --host 0.0.0.0 --port 8000
+uvicorn main:app --host 0.0.0.0 --port 8000
