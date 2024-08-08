@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from db.models.product import ProductAttribute
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from pydantic import UUID4
-from db.models.animal import Animal, AnimalType
+from db.models.animal import Animal, AnimalImage, AnimalType
 from db.models.franchise import Franchise
 from db.models.user import User
 from db.schemas.animal import AnimalCreate, AnimalTypeCreate, AnimalTypeOut, AnimalUpdate, AnimalOut
@@ -9,17 +10,27 @@ from typing import List, Optional
 
 router = APIRouter()
 
+
 @router.post("/", response_model=AnimalOut)
 async def create_animal(
+    request: Request,
     animal_in: AnimalCreate,
-    # franchise: Franchise = Depends(get_approved_franchise)
+    current_user: User = Depends(get_approved_franchise)
 ):
-    animal_type = await AnimalType.get_or_none(id=animal_in.type_id)
-    if not animal_type:
-        raise HTTPException(status_code=404, detail="Animal type not found")
+    animal_data = animal_in.dict(exclude={"images", "attributes"})
+    animal = await Animal.create(**animal_data, owner=current_user)
 
-    animal = await Animal.create(**animal_in.dict(), owner=None, type=animal_type)
-    return animal
+    # Handle image uploads
+    if request.state.files:
+        for file_path in request.state.files.values():
+            await AnimalImage.create(animal=animal, image_url=file_path)
+
+    # Handle attributes
+    if animal_in.attributes:
+        for attr in animal_in.attributes:
+            await ProductAttribute.create(**attr.dict(), animal=animal)
+
+    return await Animal.get(id=animal.id).prefetch_related("images", "attributes")
 
 @router.get("/", response_model=List[AnimalOut])
 async def read_animals(
@@ -30,9 +41,11 @@ async def read_animals(
     min_age: Optional[int] = Query(None),
     max_age: Optional[int] = Query(None),
     min_weight: Optional[float] = Query(None),
-    max_weight: Optional[float] = Query(None)
+    max_weight: Optional[float] = Query(None),
+    attribute_name: Optional[str] = Query(None),
+    attribute_value: Optional[str] = Query(None)
 ):
-    query = Animal.all()
+    query = Animal.all().prefetch_related("images", "attributes")
     if animal_type_id:
         query = query.filter(type_id=animal_type_id)
     if breed:
@@ -45,17 +58,39 @@ async def read_animals(
         query = query.filter(weight__gte=min_weight)
     if max_weight is not None:
         query = query.filter(weight__lte=max_weight)
+    if attribute_name and attribute_value:
+        query = query.filter(attributes__name=attribute_name, attributes__value=attribute_value)
 
     animals = await query.offset(skip).limit(limit)
     return animals
 
 
-@router.get("/{animal_id}", response_model=AnimalOut)
-async def read_animal(animal_id: UUID4):
-    animal = await Animal.get_or_none(id=animal_id)
-    if animal is None:
+@router.put("/{animal_id}", response_model=AnimalOut)
+async def update_animal(
+    request: Request,
+    animal_id: UUID4,
+    animal_in: AnimalUpdate,
+    current_user: User = Depends(get_current_active_user)
+):
+    animal = await Animal.get_or_none(id=animal_id, owner=current_user)
+    if not animal:
         raise HTTPException(status_code=404, detail="Animal not found")
-    return animal
+
+    update_data = animal_in.dict(exclude_unset=True, exclude={"images", "attributes"})
+    await animal.update_from_dict(update_data).save()
+
+    # Handle image uploads
+    if request.state.files:
+        for file_path in request.state.files.values():
+            await AnimalImage.create(animal=animal, image_url=file_path)
+
+    # Handle attributes
+    if animal_in.attributes:
+        await ProductAttribute.filter(animal=animal).delete()
+        for attr in animal_in.attributes:
+            await ProductAttribute.create(**attr.dict(), animal=animal)
+
+    return await Animal.get(id=animal.id).prefetch_related("images", "attributes")
 
 
 @router.put("/{animal_id}", response_model=AnimalOut)

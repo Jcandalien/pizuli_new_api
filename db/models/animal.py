@@ -1,6 +1,12 @@
 from tortoise import fields, models
 from .base import TimestampMixin
 
+class AnimalImage(models.Model):
+    id = fields.UUIDField(pk=True)
+    animal = fields.ForeignKeyField('models.Animal', related_name='animal_images')
+    image_url = fields.CharField(max_length=255)
+
+
 class AnimalType(models.Model, TimestampMixin):
     id = fields.UUIDField(pk=True)
     name = fields.CharField(max_length=50, unique=True)

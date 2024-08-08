@@ -1,12 +1,15 @@
 from fastapi import FastAPI,status
+from services.tasks import update_franchise_status
 from tortoise.contrib.fastapi import register_tortoise
 from api.v1 import animal, auth, franchise, order, product, meat, recipe
 from config import TORTOISE_ORM
 from contextlib import asynccontextmanager
+from fastapi import BackgroundTasks
 import logging
 from tortoise import Tortoise
 from services.fileuploadmiddleware import FileUploadMiddleware
-from fastapiadmin.dashboard import setup_admin
+# from fastapiadmin.dashboard import setup_admin
+from admin import setup_admin
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -37,6 +40,11 @@ app = FastAPI(
     lifespan=lifespan,
     debug=True
 )
+
+@app.on_event("startup")
+async def startup_event():
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(update_franchise_status)
 
 app.add_middleware(FileUploadMiddleware)
 app.add_middleware(

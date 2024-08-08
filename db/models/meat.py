@@ -1,6 +1,13 @@
 from tortoise import fields, models
 from .base import TimestampMixin
 
+class MeatImage(models.Model):
+    id = fields.UUIDField(pk=True)
+    meat = fields.ForeignKeyField('models.Meat', related_name='meat_images')
+    image_url = fields.CharField(max_length=255)
+
+
+
 class MeatType(models.Model, TimestampMixin):
     id = fields.UUIDField(pk=True)
     name = fields.CharField(max_length=50, unique=True)
@@ -19,8 +26,8 @@ class Meat(models.Model, TimestampMixin):
     is_fresh = fields.BooleanField(default=True)
     franchise = fields.ForeignKeyField('models.Franchise', related_name='meats')
     stock_quantity = fields.IntField(default=0)
-    image = fields.CharField(max_length=255, null=True)  # Store image URL
     tags = fields.ManyToManyField('models.Tag', related_name='meats')
+    is_chilled = fields.BooleanField(default=False)
 
     class Meta:
         table = "meats"

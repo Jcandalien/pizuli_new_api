@@ -17,10 +17,6 @@ class Home(Resource):
     label = "Home"
     icon = "fas fa-home"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.dashboard = None
-
     async def get_widgets(self, request: Request):
         order_count = await Order.all().count()
         franchise_count = await Franchise.all().count()
@@ -216,24 +212,24 @@ class RecipeResource(Model):
         "franchise.name",
     ]
 
-def setup_admin():
-    login_provider = UsernamePasswordProvider(
-        login_logo_url="https://preview.tabler.io/static/logo.svg",
-        admin_model=User,
-    )
+# def setup_admin():
+#     login_provider = UsernamePasswordProvider(
+#         login_logo_url="https://preview.tabler.io/static/logo.svg",
+#         admin_model=User,
+#     )
 
-    async def login(request: Request):
-        form = await request.form()
-        username = form.get("username")
-        password = form.get("password")
+#     async def login(request: Request):
+#         form = await request.form()
+#         username = form.get("username")
+#         password = form.get("password")
 
-        user = await User.get_or_none(username=username)
-        if not user or not verify_password(password, user.hashed_password):
-            return None
-        return user
+#         user = await User.get_or_none(username=username)
+#         if not user or not verify_password(password, user.hashed_password):
+#             return None
+#         return user
 
-    app.add_middleware(login_provider, login=login)
+#     app.add_middleware(login_provider, login=login)
 
-    return app
+#     return app
 
 
