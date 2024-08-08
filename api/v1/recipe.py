@@ -16,9 +16,14 @@ async def read_recipes(
     cooking_method: Optional[CookingMethod] = Query(None),
     min_cooking_time: Optional[int] = Query(None),
     max_cooking_time: Optional[int] = Query(None),
-    difficulty_level: Optional[str] = Query(None)
+    difficulty_level: Optional[str] = Query(None),
+    attribute_name: Optional[str] = Query(None),
+    attribute_value: Optional[str] = Query(None),
+    is_franchise_open: Optional[bool] = Query(None)
 ):
-    query = Recipe.all()
+    query = Recipe.all().prefetch_related("franchise")
+    if is_franchise_open is not None:
+        query = query.filter(franchise__is_open=is_franchise_open)
     if processing_stage:
         query = query.filter(processing_stage=processing_stage)
     if cooking_method:
@@ -29,6 +34,8 @@ async def read_recipes(
         query = query.filter(cooking_time__lte=max_cooking_time)
     if difficulty_level:
         query = query.filter(difficulty_level=difficulty_level)
+    if attribute_name and attribute_value:
+        query = query.filter(attributes__name=attribute_name, attributes__value=attribute_value)
 
     recipes = await query.offset(skip).limit(limit)
     return recipes

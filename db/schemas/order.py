@@ -9,11 +9,13 @@ from db.models.order import OrderStatus
 class OrderItem(BaseModel):
     product_id: UUID4
     quantity: int
+    product_type: str
 
 class OrderCreate(BaseModel):
     items: List[OrderItem]
     total_price: float
     address: str
+    payment_id: UUID4
 
 class OrderUpdate(BaseModel):
     status: OrderStatus
@@ -26,6 +28,7 @@ class OrderOut(BaseModel):
     total_price: float
     address: str
     status: OrderStatus
+    payment_id: UUID4
     created_at: datetime
     updated_at: datetime
 

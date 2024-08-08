@@ -1,4 +1,4 @@
-from db.schemas.product_attribute import MeatImageOut, ProductAttributeOut
+from db.schemas.product_attribute import ProductAttributeOut
 from pydantic import BaseModel, UUID4
 from typing import Optional, List
 
@@ -13,6 +13,13 @@ class MeatTypeUpdate(MeatTypeBase):
 
 class MeatTypeOut(MeatTypeBase):
     id: UUID4
+
+    class Config:
+        from_attributes = True
+
+class MeatImageOut(BaseModel):
+    id: UUID4
+    image_url: str
 
     class Config:
         from_attributes = True
@@ -44,12 +51,7 @@ class MeatUpdate(BaseModel):
     images: Optional[List[MeatImageOut]]
     attributes: Optional[List[ProductAttributeOut]]
 
-class MeatImageOut(BaseModel):
-    id: UUID4
-    image_url: str
 
-    class Config:
-        from_attributes = True
 
 class MeatOut(BaseModel):
     id: UUID4

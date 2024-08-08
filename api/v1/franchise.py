@@ -7,6 +7,8 @@ from typing import List, Optional
 from tortoise.expressions import Q
 from pydantic import UUID4
 
+from services.franchise import is_franchise_open
+
 router = APIRouter()
 
 @router.post("/", response_model=FranchiseOut)
@@ -17,8 +19,12 @@ async def create_franchise(
     """
     Create a new franchise.
     """
+    if franchise_in.open_time >= franchise_in.close_time:
+        raise HTTPException(status_code=400, detail="Open time must be before close time")
     franchise = await Franchise.create(**franchise_in.dict(), owner=current_user)
     return franchise
+
+
 
 
 @router.get(
@@ -89,7 +95,12 @@ async def read_franchise(franchise_id: int):
     franchise = await Franchise.get_or_none(id=franchise_id)
     if franchise is None:
         raise HTTPException(status_code=404, detail="Franchise not found")
+
+    if not is_franchise_open(franchise):
+        raise HTTPException(status_code=400, detail="Franchise is currently closed")
+
     return franchise
+
 
 
 @router.put("/{franchise_id}", response_model=FranchiseOut)
@@ -104,6 +115,9 @@ async def update_franchise(
     franchise = await Franchise.get_or_none(id=franchise_id, owner=current_user)
     if franchise is None:
         raise HTTPException(status_code=404, detail="Franchise not found")
+
+    if franchise_in.open_time and franchise_in.close_time and franchise_in.open_time >= franchise_in.close_time:
+        raise HTTPException(status_code=400, detail="Open time must be before close time")
 
     franchise_data = franchise_in.dict(exclude_unset=True)
     for field, value in franchise_data.items():

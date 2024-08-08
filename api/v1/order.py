@@ -1,3 +1,4 @@
+from db.models.delivery import Delivery
 from db.models.recipe import Recipe
 from db.schemas.recipe import RecipeCreate, RecipeOut
 from fastapi import APIRouter, Depends, HTTPException, status,Query
@@ -7,6 +8,7 @@ from db.models.order import Order, OrderStatus
 from db.models.user import User
 from db.schemas.order import OrderCreate, OrderUpdate, OrderOut
 from api.deps import get_current_active_user
+from services.fallback_delivery import notify_fallback_delivery
 from services.franchise import get_nearest_open_franchises, is_franchise_open
 from services.order_processing import process_order, update_order_status
 from services.logistics import notify_logistics_partner
@@ -18,37 +20,6 @@ from services.recipes import notify_franchises, wait_for_recipe_acceptance
 from utils.distance import haversine_distance
 
 router = APIRouter()
-
-@router.post("/", response_model=OrderOut)
-async def create_order(
-    order_in: OrderCreate,
-    current_user: User = Depends(get_current_active_user)
-):
-    # Find the nearest franchise
-    franchises = await Franchise.all()
-    nearest_franchise = min(
-        franchises,
-        key=lambda f: haversine_distance(
-            current_user.latitude, current_user.longitude,
-            f.latitude, f.longitude
-        )
-    )
-
-    # Create the order with the nearest franchise
-    order = await Order.create(**order_in.dict(), user=current_user, franchise=nearest_franchise)
-    # Process payment
-    # payment_info = await process_payment(order)
-    # if payment_info["status"] != "success":
-    #     await order.delete()
-    #     raise HTTPException(status_code=400, detail="Payment failed")
-
-    processed_order = await process_order(order.id)
-     # Update order with payment information
-    # processed_order.payment_info = payment_info
-    # await processed_order.save()
-
-    return processed_order
-
 
 @router.post("/", response_model=OrderOut)
 async def create_order(
@@ -81,7 +52,8 @@ async def create_order(
                 "product_id": str(item.product_id),
                 "quantity": item.quantity,
                 "price": product.price,
-                "product_type": product_type
+                "product_type": product_type,
+                "franchise_id": franchise_id
             } for item, product, product_type in items
         ]
 
@@ -92,21 +64,40 @@ async def create_order(
             total_amount=sum(item["price"] * item["quantity"] for item in order_items),
             status=OrderStatus.PENDING
         )
+        payment = await process_payment(order, order_in.payment_method)
+        order.payment = payment
+        await order.save()
         orders.append(order)
 
     # Process orders
     processed_orders = [await process_order(order.id) for order in orders]
 
-    # Notify logistics partner
+    # Notify logistics partner such as jettts
     try:
         logistics_response = await notify_logistics_partner(processed_orders)
     except Exception as e:
         # If logistics partner fails, use fallback mechanism
         logistics_response = await notify_fallback_delivery(processed_orders)
 
-    # Update orders with logistics information
+    # Aggregate locations and create a delivery record
+    pickup_locations = []
+    dropoff_location = (lat, lon)
+
+    for franchise_id, items in franchise_orders.items():
+        franchise = await Franchise.get(id=franchise_id)
+        pickup_locations.append((franchise.latitude, franchise.longitude))
+
+    pickup_locations.sort()
+    pickup_locations.append(dropoff_location)
+
+    delivery = await Delivery.create(
+        order=order,
+        pickup_locations=pickup_locations[:-1],
+        dropoff_location=pickup_locations[-1]
+    )
+
     for order in processed_orders:
-        order.logistics_info = logistics_response
+        order.delivery = delivery
         await order.save()
 
     return processed_orders
@@ -148,30 +139,48 @@ async def update_order(
     return updated_order
 
 
-@router.post("/order-on-demand", response_model=RecipeOut)
+# api/v1/recipes.py
+@router.post("/on-demand", response_model=RecipeOut)
 async def create_on_demand_recipe(
     recipe: RecipeCreate,
     current_user: User = Depends(get_current_active_user),
     lat: float = Query(...),
     lon: float = Query(...)
 ):
-    # Get nearest open franchises
     nearest_franchises = await get_nearest_open_franchises(lat, lon, limit=5)
 
     if not nearest_franchises:
         raise HTTPException(status_code=404, detail="No open franchises found nearby")
 
-    # Create a pending recipe
     pending_recipe = await Recipe.create(**recipe.dict(), status="PENDING")
-
-    # Notify franchises about the new recipe request
     await notify_franchises(nearest_franchises, pending_recipe)
 
-    # Wait for a franchise to accept (you might want to implement this as a background task)
-    accepted_recipe = await wait_for_recipe_acceptance(pending_recipe.id, timeout=300)  # 5 minutes timeout
+    accepted_recipe = await wait_for_recipe_acceptance(pending_recipe.id, timeout=300)
 
     if not accepted_recipe:
         await pending_recipe.delete()
         raise HTTPException(status_code=408, detail="No franchise accepted the recipe request")
+
+    # Create an order for the accepted recipe
+    order = await Order.create(
+        user=current_user,
+        franchise=accepted_recipe.franchise,
+        items=[{"product_id": str(accepted_recipe.id), "quantity": 1, "price": accepted_recipe.price, "product_type": "recipe"}],
+        total_amount=accepted_recipe.price,
+        status=OrderStatus.PENDING
+    )
+
+    # Process the order
+    processed_order = await process_order(order.id)
+
+    # Notify logistics partner
+    try:
+        logistics_response = await notify_logistics_partner([processed_order])
+    except Exception as e:
+        logistics_response = await notify_fallback_delivery([processed_order])
+
+    # Update order with logistics information
+    processed_order.logistics_info = logistics_response
+    await processed_order.save()
 
     return accepted_recipe

@@ -18,6 +18,7 @@ TORTOISE_ORM = {
                 "db.models.order",
                 "db.models.review",
                 "db.models.tag",
+                "db.models.payment",
                 "aerich.models",
             ],
             "default_connection": "default",

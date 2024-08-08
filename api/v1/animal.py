@@ -43,9 +43,12 @@ async def read_animals(
     min_weight: Optional[float] = Query(None),
     max_weight: Optional[float] = Query(None),
     attribute_name: Optional[str] = Query(None),
-    attribute_value: Optional[str] = Query(None)
+    attribute_value: Optional[str] = Query(None),
+    is_franchise_open: Optional[bool] = Query(None)
 ):
-    query = Animal.all().prefetch_related("images", "attributes")
+    query = Animal.all().prefetch_related("images", "attributes", "franchise")
+    if is_franchise_open is not None:
+        query = query.filter(franchise__is_open=is_franchise_open)
     if animal_type_id:
         query = query.filter(type_id=animal_type_id)
     if breed:

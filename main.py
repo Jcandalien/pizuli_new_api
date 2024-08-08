@@ -1,7 +1,7 @@
 from fastapi import FastAPI,status
 from services.tasks import update_franchise_status
 from tortoise.contrib.fastapi import register_tortoise
-from api.v1 import animal, auth, franchise, order, product, meat, recipe
+from api.v1 import animal, auth, franchise, order, product, meat, recipe, product_attribute
 from config import TORTOISE_ORM
 from contextlib import asynccontextmanager
 from fastapi import BackgroundTasks
@@ -9,7 +9,7 @@ import logging
 from tortoise import Tortoise
 from services.fileuploadmiddleware import FileUploadMiddleware
 # from fastapiadmin.dashboard import setup_admin
-from admin import setup_admin
+from admin import setup_admin, setup_admin2
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -41,6 +41,7 @@ app = FastAPI(
     debug=True
 )
 
+
 @app.on_event("startup")
 async def startup_event():
     background_tasks = BackgroundTasks()
@@ -55,6 +56,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# # Set up admin
+# admin_app = setup_admin()
+# app.mount("/admin", admin_app)
+
+
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(franchise.router, prefix="/api/v1/franchises", tags=["Franchises"])
@@ -63,10 +69,9 @@ app.include_router(meat.router, prefix="/api/v1/meat", tags=["meats"])
 app.include_router(order.router, prefix="/api/v1/orders", tags=["Orders"])
 app.include_router(recipe.router, prefix="/api/v1/recipes", tags=["recipes"])
 app.include_router(product.router, prefix="/api/v1/products", tags=["Products"])
+app.include_router(product_attribute.router, prefix="/api/v1/product_attribute", tags=["Products attributes"])
 
-# Set up admin
-admin_app = setup_admin()
-app.mount("/admin", admin_app)
+
 
 app.openapi_schema = None
 
@@ -109,3 +114,10 @@ register_tortoise(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+
+# Set up admin
+admin_app = setup_admin()
+app.mount("/admin", admin_app)
+admin_app = setup_admin2()
+app.mount("/admin2", admin_app)

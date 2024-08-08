@@ -11,7 +11,7 @@ class FranchiseType(IntEnum):
 class Franchise(models.Model, TimestampMixin):
     id = fields.UUIDField(pk=True)
     name = fields.CharField(max_length=100, unique=True)
-    type = fields.IntEnumField(FranchiseType)  # This uses the IntEnumField provided by Tortoise
+    type = fields.IntEnumField(FranchiseType) 
     owner = fields.ForeignKeyField('models.User', related_name='franchises')
     location = fields.CharField(max_length=255)
     description = fields.TextField()

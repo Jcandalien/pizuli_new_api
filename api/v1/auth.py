@@ -15,7 +15,7 @@ from db.schemas.user import UserCreate, UserEdit, UserOut
 from api.deps import get_current_active_superuser, get_current_user
 from tortoise.exceptions import IntegrityError
 from tortoise.transactions import in_transaction
-from pydantic import ValidationError
+from pydantic import UUID4, ValidationError
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -112,3 +112,20 @@ async def approve_franchise(
     franchise.is_approved = True
     await franchise.save()
     return {"message": "Franchise approved successfully"}
+
+
+@router.post("/make-superuser/{user_id}", response_model=UserOut)
+async def make_user_superuser(
+    user_id: UUID4,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀!!!!!!!!!! should never be exposed
+    """
+    user = await User.get_or_none(current_user.id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_superuser = True
+    await user.save()
+    return user

@@ -1,12 +1,15 @@
 from pydantic import BaseModel, UUID4
 from typing import Optional
 from db.models.franchise import FranchiseType
+from datetime import time
 
 class FranchiseBase(BaseModel):
     name: str
     type: FranchiseType
     location: str
     description: str
+    open_time: time
+    close_time: time
 
 class FranchiseCreate(FranchiseBase):
     pass

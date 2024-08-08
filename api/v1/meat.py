@@ -17,9 +17,14 @@ async def read_meats(
     grade: Optional[str] = Query(None),
     is_frozen: Optional[bool] = Query(None),
     min_price: Optional[float] = Query(None),
-    max_price: Optional[float] = Query(None)
+    max_price: Optional[float] = Query(None),
+    attribute_name: Optional[str] = Query(None),
+    attribute_value: Optional[str] = Query(None),
+    is_franchise_open: Optional[bool] = Query(None)
 ):
-    query = Meat.all()
+    query = Meat.all().prefetch_related("images", "attributes","franchise")
+    if is_franchise_open is not None:
+        query = query.filter(franchise__is_open=is_franchise_open)
     if meat_type_id:
         query = query.filter(type_id=meat_type_id)
     if cut:
@@ -32,6 +37,8 @@ async def read_meats(
         query = query.filter(price__gte=min_price)
     if max_price is not None:
         query = query.filter(price__lte=max_price)
+    if attribute_name and attribute_value:
+        query = query.filter(attributes__name=attribute_name, attributes__value=attribute_value)
 
     meats = await query.offset(skip).limit(limit)
     return meats

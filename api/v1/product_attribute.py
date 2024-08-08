@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
-from db.models.product_attribute import AttributeCategory, ProductAttribute
+from db.models.product import AttributeCategory, ProductAttribute
 from db.schemas.product_attribute import AttributeCategoryCreate, AttributeCategoryOut, ProductAttributeCreate, ProductAttributeOut
 from api.deps import get_current_active_user
 from pydantic import UUID4
