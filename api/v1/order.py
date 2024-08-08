@@ -78,3 +78,34 @@ async def update_order(
     updated_order = await update_order_status(order.id, new_status)
     return updated_order
 
+<<<<<<< Updated upstream
+=======
+
+@router.post("/order-on-demand", response_model=RecipeOut)
+async def create_on_demand_recipe(
+    recipe: RecipeCreate,
+    current_user: User = Depends(get_current_active_user),
+    lat: float = Query(...),
+    lon: float = Query(...)
+):
+    # Get nearest open franchises
+    nearest_franchises = await get_nearest_open_franchises(lat, lon, limit=5)
+
+    if not nearest_franchises:
+        raise HTTPException(status_code=404, detail="No open franchises found nearby")
+
+    # Create a pending recipe
+    pending_recipe = await Recipe.create(**recipe.dict(), status="PENDING")
+
+    # Notify franchises about the new recipe request
+    await notify_franchises(nearest_franchises, pending_recipe)
+
+    # Wait for a franchise to accept 
+    accepted_recipe = await wait_for_recipe_acceptance(pending_recipe.id, timeout=300)  # 5 minutes timeout
+
+    if not accepted_recipe:
+        await pending_recipe.delete()
+        raise HTTPException(status_code=408, detail="No franchise accepted the recipe request")
+
+    return accepted_recipe
+>>>>>>> Stashed changes
