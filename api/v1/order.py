@@ -78,8 +78,6 @@ async def update_order(
     updated_order = await update_order_status(order.id, new_status)
     return updated_order
 
-<<<<<<< Updated upstream
-=======
 
 @router.post("/order-on-demand", response_model=RecipeOut)
 async def create_on_demand_recipe(
@@ -100,7 +98,7 @@ async def create_on_demand_recipe(
     # Notify franchises about the new recipe request
     await notify_franchises(nearest_franchises, pending_recipe)
 
-    # Wait for a franchise to accept 
+    # Wait for a franchise to accept
     accepted_recipe = await wait_for_recipe_acceptance(pending_recipe.id, timeout=300)  # 5 minutes timeout
 
     if not accepted_recipe:
@@ -108,4 +106,3 @@ async def create_on_demand_recipe(
         raise HTTPException(status_code=408, detail="No franchise accepted the recipe request")
 
     return accepted_recipe
->>>>>>> Stashed changes
