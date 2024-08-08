@@ -5,6 +5,7 @@ from api.deps import get_current_active_user
 from db.models.user import User
 from typing import List, Optional
 from tortoise.expressions import Q
+from pydantic import UUID4
 
 router = APIRouter()
 
@@ -124,3 +125,18 @@ async def delete_franchise(
         raise HTTPException(status_code=404, detail="Franchise not found")
     await franchise.delete()
     return {"ok": True}
+
+
+@router.post("/{franchise_id}/pause", response_model=FranchiseOut)
+async def pause_franchise(
+    franchise_id: UUID4,
+    pause: bool,
+    current_user: User = Depends(get_current_active_user)
+):
+    franchise = await Franchise.get_or_none(id=franchise_id, owner=current_user)
+    if not franchise:
+        raise HTTPException(status_code=404, detail="Franchise not found")
+
+    franchise.is_paused = pause
+    await franchise.save()
+    return franchise

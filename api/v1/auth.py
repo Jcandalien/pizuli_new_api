@@ -43,7 +43,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 async def register(user_in: UserCreate):
     try:
         hashed_password = get_password_hash(user_in.password)
-        print(f"Original password: {user_in.password}, Hashed password: {hashed_password}")  # Debug print
+        # print(f"Original password: {user_in.password}, Hashed password: {hashed_password}")  # Debug print
         async with in_transaction():
             user = await User.create(
                 username=user_in.username,

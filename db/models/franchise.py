@@ -20,6 +20,10 @@ class Franchise(models.Model, TimestampMixin):
     is_approved = fields.BooleanField(default=False)
     latitude = fields.FloatField(null=True)
     longitude = fields.FloatField(null=True)
+    is_open = fields.BooleanField(default=True)
+    open_time = fields.TimeField()
+    close_time = fields.TimeField()
+    is_paused = fields.BooleanField(default=False)
 
     class Meta:
         table = "franchises"

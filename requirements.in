@@ -15,5 +15,6 @@ aiofiles
 aioredis
 redis
 fastapi_admin
+asyncio
 
 

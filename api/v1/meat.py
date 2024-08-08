@@ -36,6 +36,8 @@ async def read_meats(
     meats = await query.offset(skip).limit(limit)
     return meats
 
+
+
 @router.post("/", response_model=MeatOut, status_code=status.HTTP_201_CREATED)
 async def create_meat(
     meat_in: MeatCreate,
@@ -47,6 +49,14 @@ async def create_meat(
 
     meat = await Meat.create(**meat_in.dict(), franchise=franchise, type=meat_type)
     return meat
+
+@router.get("/{meat_id}", response_model=MeatOut)
+async def read_meat(meat_id: UUID4):
+    meat = await Meat.get_or_none(id=meat_id).prefetch_related("images", "attributes")
+    if meat is None:
+        raise HTTPException(status_code=404, detail="Meat not found")
+    return meat
+
 
 @router.put("/{meat_id}", response_model=MeatOut)
 async def update_meat(
@@ -64,6 +74,9 @@ async def update_meat(
     await meat.save()
     return meat
 
+
+
+
 @router.delete("/{meat_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_meat(
     meat_id: UUID4,
@@ -74,6 +87,7 @@ async def delete_meat(
         raise HTTPException(status_code=404, detail="Meat not found")
     await meat.delete()
     return {"ok": True}
+
 
 # endpoints for managing MeatTypes (only accessible by superusers)
 @router.post("/types", response_model=MeatTypeOut, status_code=status.HTTP_201_CREATED)
